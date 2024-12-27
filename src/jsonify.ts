@@ -3,6 +3,7 @@ import { Compressor } from './logic-pad/src/data/serializer/compressor/allCompre
 import { Puzzle } from './logic-pad/src/data/puzzle';
 import ConnectAllRule from './logic-pad/src/data/rules/connectAllRule';
 import BanPatternRule from './logic-pad/src/data/rules/banPatternRule';
+import UndercluedRule from './logic-pad/src/data/rules/undercluedRule';
 
 export async function urlToPuzzle(url: string): Promise<Puzzle> {
   const value = decodeURIComponent(url).split("?d=")[1];
@@ -25,6 +26,10 @@ export function puzzleToJson(puzzle: Puzzle): string {
         type: "forbiddenPattern",
         pattern: rule.pattern.tiles,
       });
+    } else if (rule instanceof UndercluedRule) {
+      continue;
+    } else {
+      throw new Error(`Unknown rule type (${rule.explanation})`);
     }
   }
 
@@ -34,6 +39,8 @@ export function puzzleToJson(puzzle: Puzzle): string {
         type: "minesweeper",
         tiles: symbols,
       });
+    } else {
+      throw new Error(`Unknown symbol type: ${rule}`);
     }
   }
 
