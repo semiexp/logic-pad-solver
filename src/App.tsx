@@ -17,8 +17,9 @@ function App() {
   const runSolver = async () => {
     const puzzle = await urlToPuzzle(url);
 
+    let json;
     try {
-      const json = puzzleToJson(puzzle);
+      json = puzzleToJson(puzzle);
     } catch (e: any) {
       setError(e.message);
       setAnswer(null);
