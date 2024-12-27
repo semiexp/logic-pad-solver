@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "build-rust": "cd solver && cargo build --target wasm32-unknown-emscripten --release --no-default-features && cp target/wasm32-unknown-emscripten/release/deps/solver.js ../src/solver.js",
     "lint": "eslint .",
     "preview": "vite preview"
