@@ -59,6 +59,20 @@ export function puzzleToJson(puzzle: Puzzle): string {
         type: "viewpoint",
         tiles: symbols,
       });
+    } else if (rule === "lotus") {
+      const tiles = symbols.map((symbol) => {
+        const s = symbol as LotusSymbol;
+        return {
+          x: Math.round(s.x * 2),
+          y: Math.round(s.y * 2),
+          orientation: s.orientation,
+        };
+      });
+
+      rules.push({
+        type: "lotus",
+        tiles,
+      });
     } else {
       throw new Error(`Unknown symbol type: ${rule}`);
     }

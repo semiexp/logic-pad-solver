@@ -1,4 +1,4 @@
-use crate::puzzle::{AreaNumberTile, Color, Connection, DartTile, LetterTile, MinesweeperTile, Orientation, Puzzle, Rule, Tile, ViewpointTile};
+use crate::puzzle::{AreaNumberTile, Color, Connection, DartTile, LetterTile, LotusTile, MinesweeperTile, Orientation, Puzzle, Rule, Tile, ViewpointTile};
 
 use cspuz_rs::solver::{all, int_constant, BoolVarArray2D, Solver, count_true, consecutive_prefix_true};
 use cspuz_rs::graph;
@@ -414,6 +414,112 @@ impl<'a> LogicPadSolver<'a> {
         Ok(())
     }
 
+    fn add_lotus(&mut self, y: usize, x: usize, sy: usize, sx: usize, ori: Orientation) -> Result<(), &'static str> {
+        let height = self.height;
+        let width = self.width;
+
+        if !(y < height && x < width) {
+            return Err("lotus out of bounds");
+        }
+
+        let block_cells = &self.solver.bool_var_2d((height, width));
+        graph::active_vertices_connected_2d(&mut self.solver, block_cells);
+        self.solver.add_expr(block_cells.at((y, x)));
+
+        let mut adj_pairs = vec![];
+        for y in 0..height {
+            for x in 0..width {
+                if y > 0 {
+                    adj_pairs.push(((y, x), (y - 1, x)));
+                }
+                if x > 0 {
+                    adj_pairs.push(((y, x), (y, x - 1)));
+                }
+            }
+        }
+        for (p, q) in adj_pairs {
+            self.solver.add_expr(
+                (self.is_black.at(p) & self.is_black.at(q)).imp(block_cells.at(p).iff(block_cells.at(q)))
+            );
+            self.solver.add_expr(
+                (self.is_white.at(p) & self.is_white.at(q)).imp(block_cells.at(p).iff(block_cells.at(q)))
+            );
+            self.solver.add_expr(
+                (self.is_black.at(p) ^ self.is_black.at(q)).imp(!block_cells.at(p) | !block_cells.at(q))
+            );
+            self.solver.add_expr(
+                (self.is_white.at(p) ^ self.is_white.at(q)).imp(!block_cells.at(p) | !block_cells.at(q))
+            );
+        }
+
+        for y in 0..(height as i32) {
+            for x in 0..(width as i32) {
+                let (y2, x2) = match ori {
+                    Orientation::Down | Orientation::Up => {
+                        (y, sx as i32 - x)
+                    }
+                    Orientation::Left | Orientation::Right => {
+                        (sy as i32 - y, x)
+                    }
+                    Orientation::DownLeft | Orientation::UpRight => {
+                        ((sx + sy) as i32 / 2 - x, (sx + sy) as i32 / 2 - y)
+                    }
+                    Orientation::DownRight | Orientation::UpLeft => {
+                        ((sy as i32 - sx as i32) / 2 + x, (sx as i32 - sy as i32) / 2 + y)
+                    }
+                };
+
+                if !(0 <= y2 && y2 < height as i32 && 0 <= x2 && x2 < width as i32) {
+                    self.solver.add_expr(!block_cells.at((y as usize, x as usize)));
+                    continue;
+                }
+
+                if (y, x) < (y2, x2) {
+                    self.solver.add_expr(block_cells.at((y as usize, x as usize)).iff(block_cells.at((y2 as usize, x2 as usize))));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn add_lotuses(&mut self, lotuses: &[LotusTile]) -> Result<(), &'static str> {
+        for tile in lotuses {
+            match tile.orientation {
+                Orientation::Down | Orientation::Up => {
+                    if tile.y % 2 == 0 {
+                        self.add_lotus(tile.y / 2, tile.x / 2, tile.y, tile.x, tile.orientation)?;
+                    } else {
+                        return Err("lotus on invalid position");
+                    }
+                }
+                Orientation::Left | Orientation::Right => {
+                    if tile.x % 2 == 0 {
+                        self.add_lotus(tile.y / 2, tile.x / 2, tile.y, tile.x, tile.orientation)?;
+                    } else {
+                        return Err("lotus on invalid position");
+                    }
+                }
+                Orientation::DownLeft | Orientation::UpRight => {
+                    if tile.x % 2 == 0 && tile.y % 2 == 0 {
+                        self.add_lotus(tile.y / 2, tile.x / 2, tile.y, tile.x, tile.orientation)?;
+                    } else {
+                        return Err("lotus on invalid position");
+                    }
+                }
+                Orientation::DownRight | Orientation::UpLeft => {
+                    if tile.x % 2 == 0 && tile.y % 2 == 0 {
+                        self.add_lotus(tile.y / 2, tile.x / 2, tile.y, tile.x, tile.orientation)?;
+                    } else {
+                        return Err("lotus on invalid position");
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     fn solve(self) -> Option<Vec<Vec<Option<Color>>>> {
         let model = self.solver.irrefutable_facts()?;
 
@@ -489,6 +595,9 @@ pub fn solve(puzzle: &Puzzle) -> Result<Option<Vec<Vec<Option<Color>>>>, &'stati
                     }
                 }
                 solver.add_viewpoints(tiles)?;
+            }
+            Rule::Lotus { tiles } => {
+                solver.add_lotuses(tiles)?;
             }
         }
     }

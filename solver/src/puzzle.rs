@@ -74,6 +74,13 @@ pub struct ViewpointTile {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct LotusTile {
+    pub y: usize,
+    pub x: usize,
+    pub orientation: Orientation,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub enum Rule {
     #[serde(rename = "connectAll")]
@@ -90,6 +97,8 @@ pub enum Rule {
     Dart { tiles: Vec<DartTile> },
     #[serde(rename = "viewpoint")]
     Viewpoint { tiles: Vec<ViewpointTile> },
+    #[serde(rename = "lotus")]
+    Lotus { tiles: Vec<LotusTile> },
 }
 
 #[derive(Debug, Clone, Deserialize)]
