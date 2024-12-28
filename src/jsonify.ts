@@ -54,6 +54,11 @@ export function puzzleToJson(puzzle: Puzzle): string {
         type: "dart",
         tiles: symbols,
       });
+    } else if (rule === "viewpoint") {
+      rules.push({
+        type: "viewpoint",
+        tiles: symbols,
+      });
     } else {
       throw new Error(`Unknown symbol type: ${rule}`);
     }

@@ -67,6 +67,13 @@ pub struct DartTile {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct ViewpointTile {
+    pub y: usize,
+    pub x: usize,
+    pub number: i32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub enum Rule {
     #[serde(rename = "connectAll")]
@@ -81,6 +88,8 @@ pub enum Rule {
     Letter { tiles: Vec<LetterTile> },
     #[serde(rename = "dart")]
     Dart { tiles: Vec<DartTile> },
+    #[serde(rename = "viewpoint")]
+    Viewpoint { tiles: Vec<ViewpointTile> },
 }
 
 #[derive(Debug, Clone, Deserialize)]

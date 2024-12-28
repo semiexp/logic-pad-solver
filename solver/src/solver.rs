@@ -1,6 +1,6 @@
-use crate::puzzle::{AreaNumberTile, Color, Connection, DartTile, LetterTile, MinesweeperTile, Orientation, Puzzle, Rule, Tile};
+use crate::puzzle::{AreaNumberTile, Color, Connection, DartTile, LetterTile, MinesweeperTile, Orientation, Puzzle, Rule, Tile, ViewpointTile};
 
-use cspuz_rs::solver::{all, int_constant, BoolVarArray2D, Solver, count_true};
+use cspuz_rs::solver::{all, int_constant, BoolVarArray2D, Solver, count_true, consecutive_prefix_true};
 use cspuz_rs::graph;
 
 fn rotate_pattern(pattern: &[Vec<Color>]) -> Vec<Vec<Color>> {
@@ -339,7 +339,7 @@ impl<'a> LogicPadSolver<'a> {
         Ok(())
     }
 
-    fn pointing_cells(&mut self, y: usize, x: usize, dir: Orientation) -> Vec<(usize, usize)> {
+    fn pointing_cells(&self, y: usize, x: usize, dir: Orientation) -> Vec<(usize, usize)> {
         let mut y = y as i32;
         let mut x = x as i32;
 
@@ -382,6 +382,33 @@ impl<'a> LogicPadSolver<'a> {
 
             self.solver.add_expr(self.is_black.at((y, x)).imp(count_true(ws).eq(dart.number)));
             self.solver.add_expr(self.is_white.at((y, x)).imp(count_true(bs).eq(dart.number)));
+        }
+
+        Ok(())
+    }
+
+    fn add_viewpoints(&mut self, viewpoints: &[ViewpointTile]) -> Result<(), &'static str> {
+        for tile in viewpoints {
+            let y = tile.y;
+            let x = tile.x;
+            let num = tile.number;
+
+            for a in [&self.is_black, &self.is_white] {
+                let mut e = int_constant(1);
+
+                for d in [Orientation::Up, Orientation::Left, Orientation::Down, Orientation::Right] {
+                    let cells = self.pointing_cells(y, x, d);
+                    let mut cond = vec![];
+
+                    for &q in &cells {
+                        cond.push(a.at(q));
+                    }
+
+                    e = e + consecutive_prefix_true(&cond);
+                }
+
+                self.solver.add_expr(a.at((y, x)).imp(e.eq(num)));
+            }
         }
 
         Ok(())
@@ -454,6 +481,14 @@ pub fn solve(puzzle: &Puzzle) -> Result<Option<Vec<Vec<Option<Color>>>>, &'stati
                     }
                 }
                 solver.add_darts(tiles)?;
+            }
+            Rule::Viewpoint { tiles } => {
+                for tile in tiles {
+                    if !puzzle.tiles[tile.y][tile.x].exists {
+                        return Err("viewpoint tile on non-existing tile; don't do this");
+                    }
+                }
+                solver.add_viewpoints(tiles)?;
             }
         }
     }
