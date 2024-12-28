@@ -44,6 +44,11 @@ export function puzzleToJson(puzzle: Puzzle): string {
         type: "number",
         tiles: symbols,
       });
+    } else if (rule === "letter") {
+      rules.push({
+        type: "letter",
+        tiles: symbols,
+      });
     } else {
       throw new Error(`Unknown symbol type: ${rule}`);
     }

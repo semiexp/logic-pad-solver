@@ -1,4 +1,4 @@
-use crate::puzzle::{AreaNumberTile, Color, Connection, MinesweeperTile, Puzzle, Rule, Tile};
+use crate::puzzle::{AreaNumberTile, Color, Connection, LetterTile, MinesweeperTile, Puzzle, Rule, Tile};
 
 use cspuz_rs::solver::{all, int_constant, BoolVarArray2D, Solver};
 use cspuz_rs::graph;
@@ -279,6 +279,66 @@ impl<'a> LogicPadSolver<'a> {
         Ok(())
     }
 
+    fn add_letters(&mut self, letters: &[LetterTile]) -> Result<(), &'static str> {
+        let mut letters_sorted = vec![];
+        for tile in letters {
+            letters_sorted.push((tile.letter.clone(), tile.y, tile.x));
+        }
+        letters_sorted.sort();
+
+        let mut letter_groups: Vec<Vec<(usize, usize)>> = vec![];
+        let mut current_group: Vec<(usize, usize)> = vec![];
+
+        for i in 0..letters_sorted.len() {
+            if i > 0 && letters_sorted[i].0 != letters_sorted[i - 1].0 {
+                letter_groups.push(current_group);
+                current_group = vec![];
+            }
+            current_group.push((letters_sorted[i].1, letters_sorted[i].2));
+        }
+
+        if !current_group.is_empty() {
+            letter_groups.push(current_group);
+        }
+
+        let height = self.height;
+        let width = self.width;
+        let group_id = &self.solver.int_var_2d((height, width), -1, letter_groups.len() as i32 - 1);
+
+        self.solver.add_expr((!&self.is_black & !&self.is_white).imp(group_id.eq(-1)));
+
+        let mut adj_pairs = vec![];
+        for y in 0..height {
+            for x in 0..width {
+                if y > 0 {
+                    adj_pairs.push(((y, x), (y - 1, x)));
+                }
+                if x > 0 {
+                    adj_pairs.push(((y, x), (y, x - 1)));
+                }
+            }
+        }
+        for (p, q) in adj_pairs {
+            self.solver.add_expr(
+                (group_id.at(p).ne(-1) | group_id.at(p).ne(-1)).imp(
+                    (!self.is_black.at(p) & !self.is_white.at(p))
+                    | (!self.is_black.at(q) & !self.is_white.at(q))
+                    | (group_id.at(p).eq(group_id.at(q)).iff(self.is_black.at(p).iff(self.is_black.at(q)) & self.is_white.at(p).iff(self.is_white.at(q))))
+                )
+            );
+        }
+
+        for i in 0..letter_groups.len() {
+            let group = &letter_groups[i];
+            for &(y, x) in group {
+                self.solver.add_expr(group_id.at((y, x)).eq(i as i32));
+            }
+            graph::active_vertices_connected_2d(&mut self.solver, group_id.eq(i as i32));
+        }
+
+        Ok(())
+    }
+
     fn solve(self) -> Option<Vec<Vec<Option<Color>>>> {
         let model = self.solver.irrefutable_facts()?;
 
@@ -330,6 +390,14 @@ pub fn solve(puzzle: &Puzzle) -> Result<Option<Vec<Vec<Option<Color>>>>, &'stati
                     }
                 }
                 solver.add_area_numbers(tiles)?;
+            }
+            Rule::Letter { tiles } => {
+                for tile in tiles {
+                    if !puzzle.tiles[tile.y][tile.x].exists {
+                        return Err("letter tile on non-existing tile; don't do this");
+                    }
+                }
+                solver.add_letters(tiles)?;
             }
         }
     }

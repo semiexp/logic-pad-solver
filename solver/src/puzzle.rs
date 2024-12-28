@@ -32,6 +32,13 @@ pub struct AreaNumberTile {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct LetterTile {
+    pub y: usize,
+    pub x: usize,
+    pub letter: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub enum Rule {
     #[serde(rename = "connectAll")]
@@ -42,6 +49,8 @@ pub enum Rule {
     Minesweeper { tiles: Vec<MinesweeperTile> },
     #[serde(rename = "number")]
     AreaNumber { tiles: Vec<AreaNumberTile> },
+    #[serde(rename = "letter")]
+    Letter { tiles: Vec<LetterTile> },
 }
 
 #[derive(Debug, Clone, Deserialize)]
