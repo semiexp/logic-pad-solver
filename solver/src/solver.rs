@@ -1,6 +1,6 @@
-use crate::puzzle::{AreaNumberTile, Color, Connection, LetterTile, MinesweeperTile, Puzzle, Rule, Tile};
+use crate::puzzle::{AreaNumberTile, Color, Connection, DartTile, LetterTile, MinesweeperTile, Orientation, Puzzle, Rule, Tile};
 
-use cspuz_rs::solver::{all, int_constant, BoolVarArray2D, Solver};
+use cspuz_rs::solver::{all, int_constant, BoolVarArray2D, Solver, count_true};
 use cspuz_rs::graph;
 
 fn rotate_pattern(pattern: &[Vec<Color>]) -> Vec<Vec<Color>> {
@@ -339,6 +339,54 @@ impl<'a> LogicPadSolver<'a> {
         Ok(())
     }
 
+    fn pointing_cells(&mut self, y: usize, x: usize, dir: Orientation) -> Vec<(usize, usize)> {
+        let mut y = y as i32;
+        let mut x = x as i32;
+
+        let (dy, dx) = match dir {
+            Orientation::Down => (1, 0),
+            Orientation::Right => (0, 1),
+            Orientation::Up => (-1, 0),
+            Orientation::Left => (0, -1),
+            Orientation::DownLeft => (1, -1),
+            Orientation::DownRight => (1, 1),
+            Orientation::UpLeft => (-1, -1),
+            Orientation::UpRight => (-1, 1),
+        };
+
+        let mut ret = vec![];
+
+        loop {
+            y += dy;
+            x += dx;
+
+            if !(0 <= y && y < self.height as i32 && 0 <= x && x < self.width as i32) {
+                break;
+            }
+
+            ret.push((y as usize, x as usize));
+        }
+
+        ret
+    }
+
+    fn add_darts(&mut self, darts: &[DartTile]) -> Result<(), &'static str> {
+        for dart in darts {
+            let y = dart.y;
+            let x = dart.x;
+
+            let cells = self.pointing_cells(y, x, dart.orientation);
+
+            let bs = cells.iter().map(|&(y, x)| self.is_black.at((y, x))).collect::<Vec<_>>();
+            let ws = cells.iter().map(|&(y, x)| self.is_white.at((y, x))).collect::<Vec<_>>();
+
+            self.solver.add_expr(self.is_black.at((y, x)).imp(count_true(ws).eq(dart.number)));
+            self.solver.add_expr(self.is_white.at((y, x)).imp(count_true(bs).eq(dart.number)));
+        }
+
+        Ok(())
+    }
+
     fn solve(self) -> Option<Vec<Vec<Option<Color>>>> {
         let model = self.solver.irrefutable_facts()?;
 
@@ -398,6 +446,14 @@ pub fn solve(puzzle: &Puzzle) -> Result<Option<Vec<Vec<Option<Color>>>>, &'stati
                     }
                 }
                 solver.add_letters(tiles)?;
+            }
+            Rule::Dart { tiles } => {
+                for tile in tiles {
+                    if !puzzle.tiles[tile.y][tile.x].exists {
+                        return Err("dart tile on non-existing tile; don't do this");
+                    }
+                }
+                solver.add_darts(tiles)?;
             }
         }
     }

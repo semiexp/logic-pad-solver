@@ -10,6 +10,26 @@ pub enum Color {
     Black,
 }
 
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Orientation {
+    #[serde(rename = "left")]
+    Left,
+    #[serde(rename = "right")]
+    Right,
+    #[serde(rename = "up")]
+    Up,
+    #[serde(rename = "down")]
+    Down,
+    #[serde(rename = "up-right")]
+    UpRight,
+    #[serde(rename = "up-left")]
+    UpLeft,
+    #[serde(rename = "down-right")]
+    DownRight,
+    #[serde(rename = "down-left")]
+    DownLeft,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct Tile {
     pub exists: bool,
@@ -39,6 +59,14 @@ pub struct LetterTile {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct DartTile {
+    pub y: usize,
+    pub x: usize,
+    pub orientation: Orientation,
+    pub number: i32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub enum Rule {
     #[serde(rename = "connectAll")]
@@ -51,6 +79,8 @@ pub enum Rule {
     AreaNumber { tiles: Vec<AreaNumberTile> },
     #[serde(rename = "letter")]
     Letter { tiles: Vec<LetterTile> },
+    #[serde(rename = "dart")]
+    Dart { tiles: Vec<DartTile> },
 }
 
 #[derive(Debug, Clone, Deserialize)]
