@@ -81,6 +81,12 @@ pub struct LotusTile {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct GalaxyTile {
+    pub y: usize,
+    pub x: usize,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub enum Rule {
     #[serde(rename = "connectAll")]
@@ -99,6 +105,8 @@ pub enum Rule {
     Viewpoint { tiles: Vec<ViewpointTile> },
     #[serde(rename = "lotus")]
     Lotus { tiles: Vec<LotusTile> },
+    #[serde(rename = "galaxy")]
+    Galaxy { tiles: Vec<GalaxyTile> },
 }
 
 #[derive(Debug, Clone, Deserialize)]

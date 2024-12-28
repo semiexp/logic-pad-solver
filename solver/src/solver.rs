@@ -1,4 +1,4 @@
-use crate::puzzle::{AreaNumberTile, Color, Connection, DartTile, LetterTile, LotusTile, MinesweeperTile, Orientation, Puzzle, Rule, Tile, ViewpointTile};
+use crate::puzzle::{AreaNumberTile, Color, Connection, DartTile, GalaxyTile, LetterTile, LotusTile, MinesweeperTile, Orientation, Puzzle, Rule, Tile, ViewpointTile};
 
 use cspuz_rs::solver::{all, int_constant, BoolVarArray2D, Solver, count_true, consecutive_prefix_true};
 use cspuz_rs::graph;
@@ -414,7 +414,7 @@ impl<'a> LogicPadSolver<'a> {
         Ok(())
     }
 
-    fn add_lotus(&mut self, y: usize, x: usize, sy: usize, sx: usize, ori: Orientation) -> Result<(), &'static str> {
+    fn add_lotus_or_galaxy(&mut self, y: usize, x: usize, sy: usize, sx: usize, ori: Option<Orientation>) -> Result<(), &'static str> {
         let height = self.height;
         let width = self.width;
 
@@ -455,17 +455,20 @@ impl<'a> LogicPadSolver<'a> {
         for y in 0..(height as i32) {
             for x in 0..(width as i32) {
                 let (y2, x2) = match ori {
-                    Orientation::Down | Orientation::Up => {
+                    Some(Orientation::Down) | Some(Orientation::Up) => {
                         (y, sx as i32 - x)
                     }
-                    Orientation::Left | Orientation::Right => {
+                    Some(Orientation::Left) | Some(Orientation::Right) => {
                         (sy as i32 - y, x)
                     }
-                    Orientation::DownLeft | Orientation::UpRight => {
+                    Some(Orientation::DownLeft) | Some(Orientation::UpRight) => {
                         ((sx + sy) as i32 / 2 - x, (sx + sy) as i32 / 2 - y)
                     }
-                    Orientation::DownRight | Orientation::UpLeft => {
+                    Some(Orientation::DownRight) | Some(Orientation::UpLeft) => {
                         ((sy as i32 - sx as i32) / 2 + x, (sx as i32 - sy as i32) / 2 + y)
+                    }
+                    None => {
+                        (sy as i32 - y, sx as i32 - x)
                     }
                 };
 
@@ -488,33 +491,44 @@ impl<'a> LogicPadSolver<'a> {
             match tile.orientation {
                 Orientation::Down | Orientation::Up => {
                     if tile.y % 2 == 0 {
-                        self.add_lotus(tile.y / 2, tile.x / 2, tile.y, tile.x, tile.orientation)?;
+                        self.add_lotus_or_galaxy(tile.y / 2, tile.x / 2, tile.y, tile.x, Some(tile.orientation))?;
                     } else {
                         return Err("lotus on invalid position");
                     }
                 }
                 Orientation::Left | Orientation::Right => {
                     if tile.x % 2 == 0 {
-                        self.add_lotus(tile.y / 2, tile.x / 2, tile.y, tile.x, tile.orientation)?;
+                        self.add_lotus_or_galaxy(tile.y / 2, tile.x / 2, tile.y, tile.x, Some(tile.orientation))?;
                     } else {
                         return Err("lotus on invalid position");
                     }
                 }
                 Orientation::DownLeft | Orientation::UpRight => {
                     if tile.x % 2 == 0 && tile.y % 2 == 0 {
-                        self.add_lotus(tile.y / 2, tile.x / 2, tile.y, tile.x, tile.orientation)?;
+                        self.add_lotus_or_galaxy(tile.y / 2, tile.x / 2, tile.y, tile.x, Some(tile.orientation))?;
                     } else {
                         return Err("lotus on invalid position");
                     }
                 }
                 Orientation::DownRight | Orientation::UpLeft => {
                     if tile.x % 2 == 0 && tile.y % 2 == 0 {
-                        self.add_lotus(tile.y / 2, tile.x / 2, tile.y, tile.x, tile.orientation)?;
+                        self.add_lotus_or_galaxy(tile.y / 2, tile.x / 2, tile.y, tile.x, Some(tile.orientation))?;
                     } else {
                         return Err("lotus on invalid position");
                     }
                 }
             }
+        }
+
+        Ok(())
+    }
+
+    fn add_galaxies(&mut self, galaxies: &[GalaxyTile]) -> Result<(), &'static str> {
+        for tile in galaxies {
+            if tile.x % 2 == 1 && tile.y % 2 == 1 {
+                return Err("galaxies on corners may cause unexpected behavior");
+            }
+            self.add_lotus_or_galaxy(tile.y / 2, tile.x / 2, tile.y, tile.x, None)?;
         }
 
         Ok(())
@@ -598,6 +612,9 @@ pub fn solve(puzzle: &Puzzle) -> Result<Option<Vec<Vec<Option<Color>>>>, &'stati
             }
             Rule::Lotus { tiles } => {
                 solver.add_lotuses(tiles)?;
+            }
+            Rule::Galaxy { tiles } => {
+                solver.add_galaxies(tiles)?;
             }
         }
     }

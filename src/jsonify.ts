@@ -73,6 +73,19 @@ export function puzzleToJson(puzzle: Puzzle): string {
         type: "lotus",
         tiles,
       });
+    } else if (rule === "galaxy") {
+      const tiles = symbols.map((symbol) => {
+        const s = symbol as GalaxySymbol;
+        return {
+          x: Math.round(s.x * 2),
+          y: Math.round(s.y * 2),
+        };
+      });
+
+      rules.push({
+        type: "galaxy",
+        tiles,
+      });
     } else {
       throw new Error(`Unknown symbol type: ${rule}`);
     }
