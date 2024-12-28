@@ -1,6 +1,6 @@
-use crate::puzzle::{Color, Connection, MinesweeperTile, Puzzle, Rule, Tile};
+use crate::puzzle::{AreaNumberTile, Color, Connection, MinesweeperTile, Puzzle, Rule, Tile};
 
-use cspuz_rs::solver::{Solver, BoolVarArray2D, all};
+use cspuz_rs::solver::{all, int_constant, BoolVarArray2D, Solver};
 use cspuz_rs::graph;
 
 fn rotate_pattern(pattern: &[Vec<Color>]) -> Vec<Vec<Color>> {
@@ -237,6 +237,48 @@ impl<'a> LogicPadSolver<'a> {
         }
     }
 
+    fn add_area_numbers(&mut self, area_numbers: &[AreaNumberTile]) -> Result<(), &'static str> {
+        let height = self.height;
+        let width = self.width;
+
+        let mut edges = vec![];
+        let mut edge_values = vec![];
+        let mut sizes = vec![];
+
+        let mut cell_value = vec![vec![None; width]; height];
+
+        for tile in area_numbers {
+            if cell_value[tile.y][tile.x].is_some() {
+                return Err("duplicate area number");
+            }
+
+            cell_value[tile.y][tile.x] = Some(tile.number);
+        }
+
+        for y in 0..height {
+            for x in 0..width {
+                if let Some(n) = cell_value[y][x] {
+                    sizes.push(Some(int_constant(n)));
+                } else {
+                    sizes.push(None);
+                }
+
+                if y > 0 {
+                    edges.push((y * width + x, (y - 1) * width + x));
+                    edge_values.push(!((self.is_white.at((y, x)) & self.is_white.at((y - 1, x))) | (self.is_black.at((y, x)) & self.is_black.at((y - 1, x)))));
+                }
+                if x > 0 {
+                    edges.push((y * width + x, y * width + x - 1));
+                    edge_values.push(!((self.is_white.at((y, x)) & self.is_white.at((y, x - 1))) | (self.is_black.at((y, x)) & self.is_black.at((y, x - 1)))));
+                }
+            }
+        }
+
+        self.solver.add_graph_division(&sizes, &edges, &edge_values);
+
+        Ok(())
+    }
+
     fn solve(self) -> Option<Vec<Vec<Option<Color>>>> {
         let model = self.solver.irrefutable_facts()?;
 
@@ -280,6 +322,14 @@ pub fn solve(puzzle: &Puzzle) -> Result<Option<Vec<Vec<Option<Color>>>>, &'stati
                     }
                 }
                 solver.add_minesweeper(tiles)?;
+            }
+            Rule::AreaNumber { tiles } => {
+                for tile in tiles {
+                    if !puzzle.tiles[tile.y][tile.x].exists {
+                        return Err("area number tile on non-existing tile; don't do this");
+                    }
+                }
+                solver.add_area_numbers(tiles)?;
             }
         }
     }

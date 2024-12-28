@@ -25,6 +25,13 @@ pub struct MinesweeperTile {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct AreaNumberTile {
+    pub y: usize,
+    pub x: usize,
+    pub number: i32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub enum Rule {
     #[serde(rename = "connectAll")]
@@ -33,6 +40,8 @@ pub enum Rule {
     ForbiddenPattern { pattern: Vec<Vec<Tile>> },
     #[serde(rename = "minesweeper")]
     Minesweeper { tiles: Vec<MinesweeperTile> },
+    #[serde(rename = "number")]
+    AreaNumber { tiles: Vec<AreaNumberTile> },
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -39,6 +39,11 @@ export function puzzleToJson(puzzle: Puzzle): string {
         type: "minesweeper",
         tiles: symbols,
       });
+    } else if (rule === "number") {
+      rules.push({
+        type: "number",
+        tiles: symbols,
+      });
     } else {
       throw new Error(`Unknown symbol type: ${rule}`);
     }
