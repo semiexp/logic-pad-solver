@@ -1,1 +1,1 @@
-export declare function solve(data: string): string;
+export declare function solve(data: string, underclued: boolean): string;

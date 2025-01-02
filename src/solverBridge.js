@@ -2,7 +2,7 @@ import Module from "./solver.js";
 
 let Solver = null;
 
-export function solve(data) {
+export function solve(data, underclued) {
   if (Solver === null) {
     Solver = Module();
   }
@@ -11,7 +11,7 @@ export function solve(data) {
   const buf = Solver._malloc(dataEncoded.length);
   Solver.HEAPU8.set(dataEncoded, buf);
 
-  let res = Solver._solve_puzzle(buf, dataEncoded.length);
+  let res = Solver._solve_puzzle(buf, dataEncoded.length, underclued ? 1 : 0);
   Solver._free(buf);
 
   const length = Solver.HEAPU8[res] | (Solver.HEAPU8[res + 1] << 8) | (Solver.HEAPU8[res + 2] << 16) | (Solver.HEAPU8[res + 3] << 24);

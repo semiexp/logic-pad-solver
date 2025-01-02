@@ -5,7 +5,7 @@ mod solver;
 
 static mut SHARED_ARRAY: Vec<u8> = Vec::new();
 
-fn solve_puzzle_impl(data: &[u8]) -> String {
+fn solve_puzzle_impl(data: &[u8], underclued: bool) -> String {
     let puzzle: puzzle::Puzzle = match serde_json::from_slice(data) {
         Ok(p) => p,
         Err(e) => {
@@ -13,7 +13,7 @@ fn solve_puzzle_impl(data: &[u8]) -> String {
         }
     };
 
-    let solution = match solver::solve(&puzzle) {
+    let solution = match solver::solve(&puzzle, underclued) {
         Ok(solution) => solution,
         Err(e) => {
             return format!("{{\"error\": \"{}\"}}", e);
@@ -24,9 +24,9 @@ fn solve_puzzle_impl(data: &[u8]) -> String {
 }
 
 #[no_mangle]
-fn solve_puzzle(data: *const u8, len: usize) -> *const u8 {
+fn solve_puzzle(data: *const u8, len: usize, underclued: i32) -> *const u8 {
     let data = unsafe { std::slice::from_raw_parts(data, len) };
-    let result = solve_puzzle_impl(data);
+    let result = solve_puzzle_impl(data, underclued != 0);
 
     unsafe {
         let result_len = result.len();

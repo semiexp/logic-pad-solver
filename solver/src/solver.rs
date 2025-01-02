@@ -534,31 +534,55 @@ impl<'a> LogicPadSolver<'a> {
         Ok(())
     }
 
-    fn solve(self) -> Option<Vec<Vec<Option<Color>>>> {
-        let model = self.solver.irrefutable_facts()?;
+    fn solve(self, underclued: bool) -> Option<Vec<Vec<Option<Color>>>> {
+        if underclued {
+            let model = self.solver.irrefutable_facts()?;
 
-        let is_white = model.get(&self.is_white);
-        let is_black = model.get(&self.is_black);
-        let mut result = vec![vec![None; self.width]; self.height];
-        for y in 0..self.height {
-            for x in 0..self.width {
-                match (is_white[y][x], is_black[y][x]) {
-                    (Some(true), Some(false)) => {
-                        result[y][x] = Some(Color::White);
+            let is_white = model.get(&self.is_white);
+            let is_black = model.get(&self.is_black);
+            let mut result = vec![vec![None; self.width]; self.height];
+            for y in 0..self.height {
+                for x in 0..self.width {
+                    match (is_white[y][x], is_black[y][x]) {
+                        (Some(true), Some(false)) => {
+                            result[y][x] = Some(Color::White);
+                        }
+                        (Some(false), Some(true)) => {
+                            result[y][x] = Some(Color::Black);
+                        }
+                        _ => (),
                     }
-                    (Some(false), Some(true)) => {
-                        result[y][x] = Some(Color::Black);
-                    }
-                    _ => (),
                 }
             }
-        }
 
-        Some(result)
+            Some(result)
+        } else {
+            let mut solver = self.solver;
+            let model = solver.solve()?;
+
+            let is_white = model.get(&self.is_white);
+            let is_black = model.get(&self.is_black);
+            let mut result = vec![vec![None; self.width]; self.height];
+            for y in 0..self.height {
+                for x in 0..self.width {
+                    match (is_white[y][x], is_black[y][x]) {
+                        (true, false) => {
+                            result[y][x] = Some(Color::White);
+                        }
+                        (false, true) => {
+                            result[y][x] = Some(Color::Black);
+                        }
+                        _ => (),
+                    }
+                }
+            }
+
+            Some(result)
+        }
     }
 }
 
-pub fn solve(puzzle: &Puzzle) -> Result<Option<Vec<Vec<Option<Color>>>>, &'static str> {
+pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<Color>>>>, &'static str> {
     let mut solver = LogicPadSolver::new(puzzle.height, puzzle.width);
 
     solver.add_tiles(&puzzle.tiles)?;
@@ -619,5 +643,5 @@ pub fn solve(puzzle: &Puzzle) -> Result<Option<Vec<Vec<Option<Color>>>>, &'stati
         }
     }
 
-    Ok(solver.solve())
+    Ok(solver.solve(underclued))
 }
