@@ -59,6 +59,9 @@ function App() {
   return (
     <>
       <div>
+        <p>
+          GitHub: <a href="https://github.com/semiexp/logic-pad-solver">semiexp/logic-pad-solver</a>
+        </p>
         URL: <input type="text" value={url} onChange={e => setUrl(e.target.value)} size={40} />
         <input type="button" value="Solve" onClick={runSolver} disabled={isRunning} />
 
