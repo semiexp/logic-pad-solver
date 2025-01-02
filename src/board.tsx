@@ -12,7 +12,7 @@ export const AnswerBoard = (props: AnswerBoardProps) => {
   const height = board.length;
   const width = board[0].length;
 
-  const cellSize = 20;
+  const cellSize = 30;
   const offset = 10;
 
   items.push(<rect x={0} y={0} width={width * cellSize + 2 * offset} height={height * cellSize + 2 * offset} fill="#aaaabb" />);
