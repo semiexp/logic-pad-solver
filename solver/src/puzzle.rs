@@ -113,6 +113,8 @@ pub enum Rule {
     UniqueShape { color: Color },
     #[serde(rename = "regionArea")]
     RegionArea { color: Color, size: i32 },
+    #[serde(rename = "cellCount")]
+    CellCount { color: Color, count: i32 },
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -583,6 +583,14 @@ impl<'a> LogicPadSolver<'a> {
         );
     }
 
+    fn add_cell_count(&mut self, color: Color, count: i32) {
+        match color {
+            Color::White => self.solver.add_expr(self.is_white.count_true().eq(count)),
+            Color::Black => self.solver.add_expr(self.is_black.count_true().eq(count)),
+            _ => panic!(),
+        }
+    }
+
     fn solve(self, underclued: bool) -> Option<Vec<Vec<Option<Color>>>> {
         if underclued {
             let model = self.solver.irrefutable_facts()?;
@@ -689,6 +697,9 @@ pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<
                 solver.add_unique_shape(*color);
             }
             Rule::RegionArea { color: _, size: _ } => (),
+            Rule::CellCount { color, count } => {
+                solver.add_cell_count(*color, *count);
+            }
         }
     }
 
