@@ -6,6 +6,7 @@ import BanPatternRule from './logic-pad/src/data/rules/banPatternRule';
 import UndercluedRule from './logic-pad/src/data/rules/undercluedRule';
 import SameShapeRule from './logic-pad/src/data/rules/sameShapeRule';
 import UniqueShapeRule from './logic-pad/src/data/rules/uniqueShapeRule';
+import RegionAreaRule from './logic-pad/src/data/rules/regionAreaRule';
 
 export async function urlToPuzzle(url: string): Promise<Puzzle> {
   const value = decodeURIComponent(url).split("?d=")[1];
@@ -37,6 +38,12 @@ export function puzzleToJson(puzzle: Puzzle): string {
       rules.push({
         type: "uniqueShape",
         color: rule.color,
+      });
+    } else if (rule instanceof RegionAreaRule) {
+      rules.push({
+        type: "regionArea",
+        color: rule.color,
+        size: rule.size,
       });
     } else if (rule instanceof UndercluedRule) {
       continue;

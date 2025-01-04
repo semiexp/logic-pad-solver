@@ -111,6 +111,8 @@ pub enum Rule {
     SameShape { color: Color },
     #[serde(rename = "uniqueShape")]
     UniqueShape { color: Color },
+    #[serde(rename = "regionArea")]
+    RegionArea { color: Color, size: i32 },
 }
 
 #[derive(Debug, Clone, Deserialize)]

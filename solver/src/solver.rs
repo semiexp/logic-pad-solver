@@ -238,7 +238,15 @@ impl<'a> LogicPadSolver<'a> {
         }
     }
 
-    fn add_area_numbers(&mut self, area_numbers: &[AreaNumberTile]) -> Result<(), &'static str> {
+    fn add_area_numbers(&mut self,
+        area_numbers: Option<&[AreaNumberTile]>,
+        size_light: Option<i32>,
+        size_dark: Option<i32>,
+    ) -> Result<(), &'static str> {
+        if area_numbers.is_none() && size_light.is_none() && size_dark.is_none() {
+            return Ok(());
+        }
+
         let height = self.height;
         let width = self.width;
 
@@ -248,20 +256,38 @@ impl<'a> LogicPadSolver<'a> {
 
         let mut cell_value = vec![vec![None; width]; height];
 
-        for tile in area_numbers {
-            if cell_value[tile.y][tile.x].is_some() {
-                return Err("duplicate area number");
-            }
+        if let Some(area_numbers) = area_numbers {
+            for tile in area_numbers {
+                if cell_value[tile.y][tile.x].is_some() {
+                    return Err("duplicate area number");
+                }
 
-            cell_value[tile.y][tile.x] = Some(tile.number);
+                cell_value[tile.y][tile.x] = Some(tile.number);
+            }
         }
 
         for y in 0..height {
             for x in 0..width {
-                if let Some(n) = cell_value[y][x] {
-                    sizes.push(Some(int_constant(n)));
+                if size_light.is_some() || size_dark.is_some() {
+                    let sz = self.solver.int_var(1, (height * width) as i32);
+
+                    if let Some(n) = size_light {
+                        self.solver.add_expr(self.is_white.at((y, x)).imp(sz.eq(n)));
+                    }
+                    if let Some(n) = size_dark {
+                        self.solver.add_expr(self.is_black.at((y, x)).imp(sz.eq(n)));
+                    }
+                    if let Some(n) = cell_value[y][x] {
+                        self.solver.add_expr(sz.eq(n));
+                    }
+
+                    sizes.push(Some(sz.expr()));
                 } else {
-                    sizes.push(None);
+                    if let Some(n) = cell_value[y][x] {
+                        sizes.push(Some(int_constant(n)));
+                    } else {
+                        sizes.push(None);
+                    }
                 }
 
                 if y > 0 {
@@ -625,14 +651,7 @@ pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<
                 }
                 solver.add_minesweeper(tiles)?;
             }
-            Rule::AreaNumber { tiles } => {
-                for tile in tiles {
-                    if !puzzle.tiles[tile.y][tile.x].exists {
-                        return Err("area number tile on non-existing tile; don't do this");
-                    }
-                }
-                solver.add_area_numbers(tiles)?;
-            }
+            Rule::AreaNumber { tiles: _ } => (),
             Rule::Letter { tiles } => {
                 for tile in tiles {
                     if !puzzle.tiles[tile.y][tile.x].exists {
@@ -669,8 +688,45 @@ pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<
             Rule::UniqueShape { color } => {
                 solver.add_unique_shape(*color);
             }
+            Rule::RegionArea { color: _, size: _ } => (),
         }
     }
+
+    // Area size constraints
+    let mut area_number: Option<&[AreaNumberTile]> = None;
+    let mut size_light = None;
+    let mut size_dark = None;
+
+    for rule in &puzzle.rules {
+        match rule {
+            Rule::AreaNumber { tiles } => {
+                if area_number.is_some() {
+                    return Err("multiple area number rules");
+                }
+                area_number = Some(tiles);
+            }
+            Rule::RegionArea { color, size } => {
+                match *color {
+                    Color::White => {
+                        if size_light.is_some() {
+                            return Err("multiple light area size rules");
+                        }
+                        size_light = Some(*size);
+                    }
+                    Color::Black => {
+                        if size_dark.is_some() {
+                            return Err("multiple dark area size rules");
+                        }
+                        size_dark = Some(*size);
+                    }
+                    _ => panic!(),
+                }
+            }
+            _ => (),
+        }
+    }
+
+    solver.add_area_numbers(area_number, size_light, size_dark)?;
 
     Ok(solver.solve(underclued))
 }
