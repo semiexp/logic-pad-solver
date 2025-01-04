@@ -4,6 +4,8 @@ import { Puzzle } from './logic-pad/src/data/puzzle';
 import ConnectAllRule from './logic-pad/src/data/rules/connectAllRule';
 import BanPatternRule from './logic-pad/src/data/rules/banPatternRule';
 import UndercluedRule from './logic-pad/src/data/rules/undercluedRule';
+import SameShapeRule from './logic-pad/src/data/rules/sameShapeRule';
+import UniqueShapeRule from './logic-pad/src/data/rules/uniqueShapeRule';
 
 export async function urlToPuzzle(url: string): Promise<Puzzle> {
   const value = decodeURIComponent(url).split("?d=")[1];
@@ -25,6 +27,16 @@ export function puzzleToJson(puzzle: Puzzle): string {
       rules.push({
         type: "forbiddenPattern",
         pattern: rule.pattern.tiles,
+      });
+    } else if (rule instanceof SameShapeRule) {
+      rules.push({
+        type: "sameShape",
+        color: rule.color,
+      });
+    } else if (rule instanceof UniqueShapeRule) {
+      rules.push({
+        type: "uniqueShape",
+        color: rule.color,
       });
     } else if (rule instanceof UndercluedRule) {
       continue;

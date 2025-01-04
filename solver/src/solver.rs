@@ -2,6 +2,7 @@ use crate::puzzle::{AreaNumberTile, Color, Connection, DartTile, GalaxyTile, Let
 
 use cspuz_rs::solver::{all, int_constant, BoolVarArray2D, Solver, count_true, consecutive_prefix_true};
 use cspuz_rs::graph;
+use crate::shapes::{ConstraintType, ShapesConstraint};
 
 fn rotate_pattern(pattern: &[Vec<Color>]) -> Vec<Vec<Color>> {
     let height = pattern.len();
@@ -534,6 +535,28 @@ impl<'a> LogicPadSolver<'a> {
         Ok(())
     }
 
+    fn add_same_shape(&mut self, color: Color) {
+        self.solver.add_custom_constraint(
+            Box::new(ShapesConstraint::new(self.height, self.width, ConstraintType::AllEqual)),
+            match color {
+                Color::White => &self.is_white,
+                Color::Black => &self.is_black,
+                _ => panic!(),
+            },
+        );
+    }
+
+    fn add_unique_shape(&mut self, color: Color) {
+        self.solver.add_custom_constraint(
+            Box::new(ShapesConstraint::new(self.height, self.width, ConstraintType::AllDifferent)),
+            match color {
+                Color::White => &self.is_white,
+                Color::Black => &self.is_black,
+                _ => panic!(),
+            },
+        );
+    }
+
     fn solve(self, underclued: bool) -> Option<Vec<Vec<Option<Color>>>> {
         if underclued {
             let model = self.solver.irrefutable_facts()?;
@@ -639,6 +662,12 @@ pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<
             }
             Rule::Galaxy { tiles } => {
                 solver.add_galaxies(tiles)?;
+            }
+            Rule::SameShape { color } => {
+                solver.add_same_shape(*color);
+            }
+            Rule::UniqueShape { color } => {
+                solver.add_unique_shape(*color);
             }
         }
     }

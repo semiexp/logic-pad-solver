@@ -107,6 +107,10 @@ pub enum Rule {
     Lotus { tiles: Vec<LotusTile> },
     #[serde(rename = "galaxy")]
     Galaxy { tiles: Vec<GalaxyTile> },
+    #[serde(rename = "sameShape")]
+    SameShape { color: Color },
+    #[serde(rename = "uniqueShape")]
+    UniqueShape { color: Color },
 }
 
 #[derive(Debug, Clone, Deserialize)]

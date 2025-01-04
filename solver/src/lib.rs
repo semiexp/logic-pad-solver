@@ -1,6 +1,7 @@
 use serde_json;
 
 mod puzzle;
+mod shapes;
 mod solver;
 
 static mut SHARED_ARRAY: Vec<u8> = Vec::new();
