@@ -115,6 +115,8 @@ pub enum Rule {
     RegionArea { color: Color, size: i32 },
     #[serde(rename = "cellCount")]
     CellCount { color: Color, count: i32 },
+    #[serde(rename = "offByX")]
+    OffByX { number: i32 },
 }
 
 #[derive(Debug, Clone, Deserialize)]

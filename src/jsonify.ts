@@ -8,6 +8,7 @@ import SameShapeRule from './logic-pad/src/data/rules/sameShapeRule';
 import UniqueShapeRule from './logic-pad/src/data/rules/uniqueShapeRule';
 import RegionAreaRule from './logic-pad/src/data/rules/regionAreaRule';
 import CellCountRule from './logic-pad/src/data/rules/cellCountRule';
+import OffByXRule from './logic-pad/src/data/rules/offByXRule';
 
 export async function urlToPuzzle(url: string): Promise<Puzzle> {
   const value = decodeURIComponent(url).split("?d=")[1];
@@ -51,6 +52,11 @@ export function puzzleToJson(puzzle: Puzzle): string {
         type: "cellCount",
         color: rule.color,
         count: rule.count,
+      });
+    } else if (rule instanceof OffByXRule) {
+      rules.push({
+        type: "offByX",
+        number: rule.number,
       });
     } else if (rule instanceof UndercluedRule) {
       continue;

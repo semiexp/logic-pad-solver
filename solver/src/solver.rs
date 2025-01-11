@@ -54,12 +54,13 @@ struct LogicPadSolver<'a> {
     solver: Solver<'a>,
     height: usize,
     width: usize,
+    off_by: Option<i32>,
     is_white: BoolVarArray2D,
     is_black: BoolVarArray2D,
 }
 
 impl<'a> LogicPadSolver<'a> {
-    fn new(height: usize, width: usize) -> LogicPadSolver<'a> {
+    fn new(height: usize, width: usize, off_by: Option<i32>) -> LogicPadSolver<'a> {
         let mut solver = Solver::new();
         let is_white = solver.bool_var_2d((height, width));
         let is_black = solver.bool_var_2d((height, width));
@@ -70,6 +71,7 @@ impl<'a> LogicPadSolver<'a> {
             solver,
             height,
             width,
+            off_by,
             is_white,
             is_black,
         }
@@ -210,8 +212,13 @@ impl<'a> LogicPadSolver<'a> {
             let xmin = if x > 0 { x - 1 } else { 0 };
             let xmax = (x + 2).min(width);
 
-            self.solver.add_expr(self.is_white.at((y, x)).imp(self.is_black.slice((ymin..ymax, xmin..xmax)).count_true().eq(num)));
-            self.solver.add_expr(self.is_black.at((y, x)).imp(self.is_white.slice((ymin..ymax, xmin..xmax)).count_true().eq(num)));
+            if let Some(off_by) = self.off_by {
+                self.solver.add_expr(self.is_white.at((y, x)).imp(self.is_black.slice((ymin..ymax, xmin..xmax)).count_true().eq(num + off_by) | self.is_black.slice((ymin..ymax, xmin..xmax)).count_true().eq(num - off_by)));
+                self.solver.add_expr(self.is_black.at((y, x)).imp(self.is_white.slice((ymin..ymax, xmin..xmax)).count_true().eq(num + off_by) | self.is_white.slice((ymin..ymax, xmin..xmax)).count_true().eq(num - off_by)));
+            } else {
+                self.solver.add_expr(self.is_white.at((y, x)).imp(self.is_black.slice((ymin..ymax, xmin..xmax)).count_true().eq(num)));
+                self.solver.add_expr(self.is_black.at((y, x)).imp(self.is_white.slice((ymin..ymax, xmin..xmax)).count_true().eq(num)));
+            }
         }
 
         Ok(())
@@ -278,13 +285,26 @@ impl<'a> LogicPadSolver<'a> {
                         self.solver.add_expr(self.is_black.at((y, x)).imp(sz.eq(n)));
                     }
                     if let Some(n) = cell_value[y][x] {
-                        self.solver.add_expr(sz.eq(n));
+                        if let Some(off_by) = self.off_by {
+                            self.solver.add_expr(sz.eq(n + off_by) | sz.eq(n - off_by));
+                        } else {
+                            self.solver.add_expr(sz.eq(n));
+                        }
                     }
 
                     sizes.push(Some(sz.expr()));
                 } else {
                     if let Some(n) = cell_value[y][x] {
-                        sizes.push(Some(int_constant(n)));
+                        if let Some(off_by) = self.off_by {
+                            if n - off_by > 0 {
+                                let sz = self.solver.int_var_from_domain(vec![n - off_by, n + off_by]);
+                                sizes.push(Some(sz.expr()));
+                            } else {
+                                sizes.push(Some(int_constant(n + off_by)));
+                            }
+                        } else {
+                            sizes.push(Some(int_constant(n)));
+                        }
                     } else {
                         sizes.push(None);
                     }
@@ -407,8 +427,13 @@ impl<'a> LogicPadSolver<'a> {
             let bs = cells.iter().map(|&(y, x)| self.is_black.at((y, x))).collect::<Vec<_>>();
             let ws = cells.iter().map(|&(y, x)| self.is_white.at((y, x))).collect::<Vec<_>>();
 
-            self.solver.add_expr(self.is_black.at((y, x)).imp(count_true(ws).eq(dart.number)));
-            self.solver.add_expr(self.is_white.at((y, x)).imp(count_true(bs).eq(dart.number)));
+            if let Some(off_by) = self.off_by {
+                self.solver.add_expr(self.is_black.at((y, x)).imp(count_true(&ws).eq(dart.number + off_by) | count_true(&ws).eq(dart.number - off_by)));
+                self.solver.add_expr(self.is_white.at((y, x)).imp(count_true(&bs).eq(dart.number + off_by) | count_true(&bs).eq(dart.number - off_by)));
+            } else {
+                self.solver.add_expr(self.is_black.at((y, x)).imp(count_true(&ws).eq(dart.number)));
+                self.solver.add_expr(self.is_white.at((y, x)).imp(count_true(&bs).eq(dart.number)));
+            }
         }
 
         Ok(())
@@ -434,7 +459,11 @@ impl<'a> LogicPadSolver<'a> {
                     e = e + consecutive_prefix_true(&cond);
                 }
 
-                self.solver.add_expr(a.at((y, x)).imp(e.eq(num)));
+                if let Some(off_by) = self.off_by {
+                    self.solver.add_expr(a.at((y, x)).imp(e.eq(num + off_by) | e.eq(num - off_by)));
+                } else {
+                    self.solver.add_expr(a.at((y, x)).imp(e.eq(num)));
+                }
             }
         }
 
@@ -640,7 +669,24 @@ impl<'a> LogicPadSolver<'a> {
 }
 
 pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<Color>>>>, &'static str> {
-    let mut solver = LogicPadSolver::new(puzzle.height, puzzle.width);
+    let mut off_by = None;
+
+    for rule in &puzzle.rules {
+        match rule {
+            Rule::OffByX { number } => {
+                if off_by.is_some() {
+                    return Err("multiple offByX rules");
+                }
+                if *number <= 0 {
+                    return Err("offByX with non-positive number");
+                }
+                off_by = Some(*number);
+            }
+            _ => (),
+        }
+    }
+
+    let mut solver = LogicPadSolver::new(puzzle.height, puzzle.width, off_by);
 
     solver.add_tiles(&puzzle.tiles)?;
     solver.add_connections(&puzzle.connections);
@@ -700,6 +746,7 @@ pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<
             Rule::CellCount { color, count } => {
                 solver.add_cell_count(*color, *count);
             }
+            Rule::OffByX { number: _ } => (),
         }
     }
 
