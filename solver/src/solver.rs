@@ -713,10 +713,12 @@ pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<
                 if off_by.is_some() {
                     return Err("multiple offByX rules");
                 }
-                if *number <= 0 {
-                    return Err("offByX with non-positive number");
+                if *number < 0 {
+                    return Err("offByX with negative number");
                 }
-                off_by = Some(*number);
+                if *number > 0 {
+                    off_by = Some(*number);
+                }
             }
             _ => (),
         }
