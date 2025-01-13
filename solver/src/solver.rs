@@ -233,6 +233,42 @@ impl<'a> LogicPadSolver<'a> {
         Ok(())
     }
 
+    fn add_connect_all_both_color(&mut self) {
+        let height = self.height;
+        let width = self.width;
+
+        for y in 0..(height - 1) {
+            for x in 0..(width - 1) {
+                self.solver.add_expr(!(self.is_white.at((y, x)) & self.is_black.at((y, x + 1)) & self.is_black.at((y + 1, x)) & self.is_white.at((y + 1, x + 1))));
+                self.solver.add_expr(!(self.is_black.at((y, x)) & self.is_white.at((y, x + 1)) & self.is_white.at((y + 1, x)) & self.is_black.at((y + 1, x + 1))));
+            }
+        }
+
+        let mut circ = vec![];
+        for x in 0..width {
+            circ.push((0, x));
+        }
+        for y in 1..(height - 1) {
+            circ.push((y, width - 1));
+        }
+        for x in (0..width - 1).rev() {
+            circ.push((height - 1, x));
+        }
+        for y in (1..(height - 1)).rev() {
+            circ.push((y, 0));
+        }
+
+        let mut boundaries = vec![];
+        for i in 0..circ.len() {
+            let p = circ[i];
+            let q = circ[(i + 1) % circ.len()];
+
+            boundaries.push((self.is_white.at(p) & self.is_black.at(q)) | (self.is_black.at(p) & self.is_white.at(q)));
+        }
+
+        self.solver.add_expr(count_true(boundaries).le(2));
+    }
+
     fn add_connections(&mut self, connections: &[Connection]) {
         for conn in connections {
             let y1 = conn.y1;
@@ -691,9 +727,19 @@ pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<
     solver.add_tiles(&puzzle.tiles)?;
     solver.add_connections(&puzzle.connections);
 
+    let mut has_connect_all_white = false;
+    let mut has_connect_all_black = false;
+
     for rule in &puzzle.rules {
         match rule {
-            Rule::ConnectAll { color } => solver.add_connect_all(*color)?,
+            Rule::ConnectAll { color } => {
+                match *color {
+                    Color::White => has_connect_all_white = true,
+                    Color::Black => has_connect_all_black = true,
+                    _ => return Err("connectAll with gray color"),
+                }
+                solver.add_connect_all(*color)?;
+            }
             Rule::ForbiddenPattern { pattern } => {
                 solver.add_forbidden_pattern(pattern)?;
             }
@@ -748,6 +794,10 @@ pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<
             }
             Rule::OffByX { number: _ } => (),
         }
+    }
+
+    if has_connect_all_white && has_connect_all_black {
+        solver.add_connect_all_both_color();
     }
 
     // Area size constraints
