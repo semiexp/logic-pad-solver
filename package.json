@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build-rust": "cd solver && cargo build --target wasm32-unknown-emscripten --release --no-default-features && cp target/wasm32-unknown-emscripten/release/deps/solver.js ../src/solver.js",
+    "build-rust": "cd solver && cargo build --target wasm32-unknown-emscripten --release --no-default-features && cp target/wasm32-unknown-emscripten/release/deps/solver.js ../packages/logic-pad-solver-core/src/solver.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -14,7 +14,8 @@
     "@logic-pad/core": "^0.1.6",
     "comlink": "^4.4.2",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "logic-pad-solver-core": "file:./packages/logic-pad-solver-core"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

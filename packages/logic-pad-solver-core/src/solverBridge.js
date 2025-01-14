@@ -2,7 +2,7 @@ import Module from "./solver.js";
 
 let Solver = null;
 
-export function solve(data, underclued) {
+export function solveLogicPad(data, underclued) {
   if (Solver === null) {
     Solver = Module();
   }

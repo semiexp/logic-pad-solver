@@ -46,7 +46,7 @@ function App() {
     }
     
     if (workerInstance === null) {
-      workerInstance = new ComlinkWorker<typeof import("./solverBridge")>(new URL("./solverBridge", import.meta.url));
+      workerInstance = new ComlinkWorker<typeof import("./worker")>(new URL("./worker", import.meta.url));
     }
 
     const useUnderclued = solverMode === "underclued" || solverMode === "tilesRemaining";
