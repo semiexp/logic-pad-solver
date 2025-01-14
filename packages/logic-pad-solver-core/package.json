@@ -4,7 +4,8 @@
   "description": "A solver for https://logic-pad.com/ based on cspuz",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-rust": "cd solver && cargo build --target wasm32-unknown-emscripten --release --no-default-features && cp target/wasm32-unknown-emscripten/release/deps/solver.js ../src/core/solver.js"
   },
   "author": "",
   "license": "AGPL-3.0-only"

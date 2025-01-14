@@ -1,4 +1,4 @@
-import Module from "./solver.js";
+import Module from "./core/solver.js";
 
 let Solver = null;
 
