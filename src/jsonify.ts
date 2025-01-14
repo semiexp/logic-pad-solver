@@ -1,14 +1,5 @@
-import { Serializer } from './logic-pad/src/data/serializer/allSerializers';
-import { Compressor } from './logic-pad/src/data/serializer/compressor/allCompressors';
-import { Puzzle } from './logic-pad/src/data/puzzle';
-import ConnectAllRule from './logic-pad/src/data/rules/connectAllRule';
-import BanPatternRule from './logic-pad/src/data/rules/banPatternRule';
-import UndercluedRule from './logic-pad/src/data/rules/undercluedRule';
-import SameShapeRule from './logic-pad/src/data/rules/sameShapeRule';
-import UniqueShapeRule from './logic-pad/src/data/rules/uniqueShapeRule';
-import RegionAreaRule from './logic-pad/src/data/rules/regionAreaRule';
-import CellCountRule from './logic-pad/src/data/rules/cellCountRule';
-import OffByXRule from './logic-pad/src/data/rules/offByXRule';
+import { Serializer, Compressor, ConnectAllRule, BanPatternRule, UndercluedRule, SameShapeRule, UniqueShapeRule, RegionAreaRule, CellCountRule, OffByXRule, LotusSymbol, GalaxySymbol } from '@logic-pad/core';
+import { Puzzle } from '@logic-pad/core/data/puzzle.js';
 
 export async function urlToPuzzle(url: string): Promise<Puzzle> {
   const value = decodeURIComponent(url).split("?d=")[1];

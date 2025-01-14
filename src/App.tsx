@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { TileData } from '@logic-pad/core';
 
 import { urlToPuzzle, puzzleToJson } from './jsonify';
 import { AnswerBoard } from './board';

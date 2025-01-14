@@ -1,4 +1,4 @@
-import TileData from "./logic-pad/src/data/tile";
+import { TileData } from '@logic-pad/core';
 
 export type AnswerBoardProps = {
   board: readonly (readonly TileData[])[];
