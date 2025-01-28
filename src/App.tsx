@@ -92,14 +92,18 @@ function App() {
       </div>
 
       <div>
-        <label htmlFor="solve">Solve</label>
-        <input type="radio" id="solve" name="mode" value="solve" checked={solverMode === "solve"} onChange={() => setSolverMode("solve")} />
-
-        <label htmlFor="underclued">Underclued</label>
-        <input type="radio" id="underclued" name="mode" value="underclued" checked={solverMode === "underclued"} onChange={() => setSolverMode("underclued")} />
-
-        <label htmlFor="remainingTiles">Count Tiles Remaining</label>
-        <input type="radio" id="tilesRemaining" name="mode" value="remainingTiles" checked={solverMode === "tilesRemaining"} onChange={() => setSolverMode("tilesRemaining")} />
+        <span style={{ borderRight: "1px solid black", marginRight: "5px" }}>
+          <label htmlFor="solve">Solve</label>
+          <input type="radio" id="solve" name="mode" value="solve" checked={solverMode === "solve"} onChange={() => setSolverMode("solve")} />
+        </span>
+        <span style={{ borderRight: "1px solid black", marginRight: "5px" }}>
+          <label htmlFor="underclued">Underclued</label>
+          <input type="radio" id="underclued" name="mode" value="underclued" checked={solverMode === "underclued"} onChange={() => setSolverMode("underclued")} />
+        </span>
+        <span>
+          <label htmlFor="tilesRemaining">Count Tiles Remaining</label>
+          <input type="radio" id="tilesRemaining" name="mode" value="remainingTiles" checked={solverMode === "tilesRemaining"} onChange={() => setSolverMode("tilesRemaining")} />
+        </span>
       </div>
 
       {
