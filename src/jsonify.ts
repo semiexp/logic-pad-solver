@@ -1,10 +1,26 @@
-import { Serializer, Compressor, ConnectAllRule, BanPatternRule, UndercluedRule, SameShapeRule, UniqueShapeRule, RegionAreaRule, CellCountRule, OffByXRule, LotusSymbol, GalaxySymbol } from '@logic-pad/core';
+import { Serializer, Compressor, ConnectAllRule, BanPatternRule, UndercluedRule, SameShapeRule, UniqueShapeRule, RegionAreaRule, CellCountRule, OffByXRule, LotusSymbol, GalaxySymbol, TileData, Color } from '@logic-pad/core';
 import { Puzzle } from '@logic-pad/core/data/puzzle.js';
 
 export async function urlToPuzzle(url: string): Promise<Puzzle> {
   const value = decodeURIComponent(url).split("?d=")[1];
   const decompressed = await Compressor.decompress(value);
   return Serializer.parsePuzzle(decompressed);
+}
+
+function canonizeTiles(tileData: readonly (readonly TileData[])[]): TileData[][] {
+  const ret = [];
+  for (const row of tileData) {
+    const newRow = [];
+    for (const tile of row) {
+      if (tile.exists) {
+        newRow.push(tile);
+      } else {
+        newRow.push(new TileData(true, false, Color.Gray));
+      }
+    }
+    ret.push(newRow);
+  }
+  return ret;
 }
 
 export function puzzleToJson(puzzle: Puzzle): string {
@@ -20,7 +36,7 @@ export function puzzleToJson(puzzle: Puzzle): string {
     } else if (rule instanceof BanPatternRule) {
       rules.push({
         type: "forbiddenPattern",
-        pattern: rule.pattern.tiles,
+        pattern: canonizeTiles(rule.pattern.tiles),
       });
     } else if (rule instanceof SameShapeRule) {
       rules.push({
