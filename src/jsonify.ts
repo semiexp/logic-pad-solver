@@ -1,4 +1,4 @@
-import { Serializer, Compressor, ConnectAllRule, BanPatternRule, UndercluedRule, SameShapeRule, UniqueShapeRule, RegionAreaRule, CellCountRule, OffByXRule, LotusSymbol, GalaxySymbol, TileData, Color } from '@logic-pad/core';
+import { Serializer, Compressor, ConnectAllRule, BanPatternRule, UndercluedRule, SameShapeRule, UniqueShapeRule, RegionAreaRule, CellCountRule, OffByXRule, LotusSymbol, GalaxySymbol, SymbolsPerRegionRule, Comparison, TileData, Color } from '@logic-pad/core';
 import { Puzzle } from '@logic-pad/core/data/puzzle.js';
 
 export async function urlToPuzzle(url: string): Promise<Puzzle> {
@@ -67,6 +67,23 @@ export function puzzleToJson(puzzle: Puzzle): string {
       });
     } else if (rule instanceof UndercluedRule) {
       continue;
+    } else if (rule instanceof SymbolsPerRegionRule) {
+      let kind;
+      if (rule.comparison == Comparison.Equal) {
+        kind = "exactly";
+      } else if (rule.comparison == Comparison.AtLeast) {
+        kind = "atLeast";
+      } else if (rule.comparison == Comparison.AtMost) {
+        kind = "atMost";
+      } else {
+        throw new Error(`Unknown comparison type (${rule.comparison})`);
+      }
+      rules.push({
+        type: "symbolCount",
+        number: rule.count,
+        kind,
+        color: rule.color,
+      });
     } else {
       throw new Error(`Unknown rule type (${rule.explanation})`);
     }

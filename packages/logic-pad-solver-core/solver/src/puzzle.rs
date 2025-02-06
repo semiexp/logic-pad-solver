@@ -86,6 +86,16 @@ pub struct GalaxyTile {
     pub x: usize,
 }
 
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+pub enum SymbolCountKind {
+    #[serde(rename = "atMost")]
+    AtMost,
+    #[serde(rename = "atLeast")]
+    AtLeast,
+    #[serde(rename = "exactly")]
+    Exactly,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub enum Rule {
@@ -117,6 +127,8 @@ pub enum Rule {
     CellCount { color: Color, count: i32 },
     #[serde(rename = "offByX")]
     OffByX { number: i32 },
+    #[serde(rename = "symbolCount")]
+    SymbolCount { number: i32, kind: SymbolCountKind, color: Color },
 }
 
 #[derive(Debug, Clone, Deserialize)]

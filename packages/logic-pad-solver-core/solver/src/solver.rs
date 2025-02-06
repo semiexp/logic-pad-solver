@@ -1,4 +1,4 @@
-use crate::puzzle::{AreaNumberTile, Color, Connection, DartTile, GalaxyTile, LetterTile, LotusTile, MinesweeperTile, Orientation, Puzzle, Rule, Tile, ViewpointTile};
+use crate::puzzle::{AreaNumberTile, Color, Connection, DartTile, GalaxyTile, LetterTile, LotusTile, MinesweeperTile, Orientation, Puzzle, Rule, SymbolCountKind, Tile, ViewpointTile};
 
 use cspuz_rs::solver::{all, int_constant, BoolVarArray2D, Solver, count_true, consecutive_prefix_true};
 use cspuz_rs::graph;
@@ -656,6 +656,76 @@ impl<'a> LogicPadSolver<'a> {
         }
     }
 
+    fn add_symbol_count(&mut self, constraints: &[(i32, SymbolCountKind, Color)], symbol_cells: &[(usize, usize)]) {
+        let height = self.height;
+        let width = self.width;
+
+        let mut adj_pairs = vec![];
+        for y in 0..height {
+            for x in 0..width {
+                if y > 0 {
+                    adj_pairs.push(((y, x), (y - 1, x)));
+                }
+                if x > 0 {
+                    adj_pairs.push(((y, x), (y, x - 1)));
+                }
+            }
+        }
+
+        let mut symbol_group = vec![];
+        for &(y, x) in symbol_cells {
+            let indicator = self.solver.bool_var_2d((height, width));
+            self.solver.add_expr(indicator.at((y, x)));
+            graph::active_vertices_connected_2d(&mut self.solver, &indicator);
+
+            self.solver.add_expr(indicator.imp(&self.is_black | &self.is_white));
+            for &(p, q) in &adj_pairs {
+                self.solver.add_expr(
+                    (self.is_black.at(p) & self.is_black.at(q)).imp(indicator.at(p).iff(indicator.at(q)))
+                );
+                self.solver.add_expr(
+                    (self.is_white.at(p) & self.is_white.at(q)).imp(indicator.at(p).iff(indicator.at(q)))
+                );
+                self.solver.add_expr(
+                    (self.is_black.at(p) ^ self.is_black.at(q)).imp(!(indicator.at(p) & indicator.at(q)))
+                );
+                self.solver.add_expr(
+                    (self.is_white.at(p) ^ self.is_white.at(q)).imp(!(indicator.at(p) & indicator.at(q)))
+                );
+            }
+
+            symbol_group.push(indicator);
+        }
+
+        for &(number, kind, color) in constraints {
+            let target = match color {
+                Color::White => &self.is_white,
+                Color::Black => &self.is_black,
+                _ => panic!(),
+            };
+            for y in 0..height {
+                for x in 0..width {
+                    let mut c = vec![];
+                    for indicator in &symbol_group {
+                        c.push(indicator.at((y, x)));
+                    }
+
+                    match kind {
+                        SymbolCountKind::Exactly => {
+                            self.solver.add_expr(target.at((y, x)).imp(count_true(&c).eq(number)));
+                        }
+                        SymbolCountKind::AtMost => {
+                            self.solver.add_expr(target.at((y, x)).imp(count_true(&c).le(number)));
+                        }
+                        SymbolCountKind::AtLeast => {
+                            self.solver.add_expr(target.at((y, x)).imp(count_true(&c).ge(number)));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fn solve(self, underclued: bool) -> Option<Vec<Vec<Option<Color>>>> {
         if underclued {
             let model = self.solver.irrefutable_facts()?;
@@ -732,6 +802,8 @@ pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<
     let mut has_connect_all_white = false;
     let mut has_connect_all_black = false;
 
+    let mut symbol_count_constraints = vec![];
+
     for rule in &puzzle.rules {
         match rule {
             Rule::ConnectAll { color } => {
@@ -795,11 +867,73 @@ pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<
                 solver.add_cell_count(*color, *count);
             }
             Rule::OffByX { number: _ } => (),
+            &Rule::SymbolCount { number, kind, color } => {
+                symbol_count_constraints.push((number, kind, color));
+            }
         }
     }
 
     if has_connect_all_white && has_connect_all_black {
         solver.add_connect_all_both_color();
+    }
+
+    if !symbol_count_constraints.is_empty() {
+        let mut symbol_cells = vec![];
+        for rule in &puzzle.rules {
+            match rule {
+                Rule::ConnectAll { color: _ } => (),
+                Rule::ForbiddenPattern { pattern: _ } => (),
+                Rule::Minesweeper { tiles } => {
+                    for tile in tiles {
+                        symbol_cells.push((tile.y, tile.x));
+                    }
+                }
+                Rule::AreaNumber { tiles } => {
+                    for tile in tiles {
+                        symbol_cells.push((tile.y, tile.x));
+                    }
+                }
+                Rule::Letter { tiles } => {
+                    for tile in tiles {
+                        symbol_cells.push((tile.y, tile.x));
+                    }
+                }
+                Rule::Dart { tiles } => {
+                    for tile in tiles {
+                        symbol_cells.push((tile.y, tile.x));
+                    }
+                }
+                Rule::Viewpoint { tiles } => {
+                    for tile in tiles {
+                        symbol_cells.push((tile.y, tile.x));
+                    }
+                }
+                Rule::Lotus { tiles } => {
+                    for tile in tiles {
+                        if !(tile.y % 2 == 0 && tile.x % 2 == 0) {
+                            return Err("lotus not on cell center is not supported for symbol count");
+                        }
+                        symbol_cells.push((tile.y, tile.x));
+                    }
+                }
+                Rule::Galaxy { tiles } => {
+                    for tile in tiles {
+                        if !(tile.y % 2 == 0 && tile.x % 2 == 0) {
+                            return Err("galaxy not on cell center is not supported for symbol count");
+                        }
+                        symbol_cells.push((tile.y, tile.x));
+                    }
+                }
+                Rule::SameShape { color: _ } => (),
+                Rule::UniqueShape { color: _ } => (),
+                Rule::RegionArea { color: _, size: _ } => (),
+                Rule::CellCount { color: _, count: _ } => (),
+                Rule::OffByX { number: _ } => (),
+                Rule::SymbolCount { number: _, kind: _, color: _ } => (),
+            }
+        }
+
+        solver.add_symbol_count(&symbol_count_constraints, &symbol_cells);
     }
 
     // Area size constraints
