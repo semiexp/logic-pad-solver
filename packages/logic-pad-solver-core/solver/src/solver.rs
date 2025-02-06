@@ -403,7 +403,7 @@ impl<'a> LogicPadSolver<'a> {
         }
         for (p, q) in adj_pairs {
             self.solver.add_expr(
-                (group_id.at(p).ne(-1) | group_id.at(p).ne(-1)).imp(
+                (group_id.at(p).ne(-1) | group_id.at(q).ne(-1)).imp(
                     (!self.is_black.at(p) & !self.is_white.at(p))
                     | (!self.is_black.at(q) & !self.is_white.at(q))
                     | (group_id.at(p).eq(group_id.at(q)).iff(self.is_black.at(p).iff(self.is_black.at(q)) & self.is_white.at(p).iff(self.is_white.at(q))))
