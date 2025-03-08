@@ -8,5 +8,12 @@
     "build-rust": "cd solver && cargo build --target wasm32-unknown-emscripten --release --no-default-features && cp target/wasm32-unknown-emscripten/release/deps/solver.js ../src/core/solver.js"
   },
   "author": "",
-  "license": "AGPL-3.0-only"
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/semiexp/logic-pad-solver.git"
+  },
+  "publishConfig": {
+    "provenance": true
+  }
 }
