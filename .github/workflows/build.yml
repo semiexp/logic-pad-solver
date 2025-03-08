@@ -36,5 +36,5 @@ jobs:
         path: logic-pad-solver/packages/logic-pad-solver-core/logic-pad-solver-core-*.tgz
     - name: Publish package to npm
       run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
