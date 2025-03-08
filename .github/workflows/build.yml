@@ -28,6 +28,7 @@ jobs:
       run: git clone --recursive https://github.com/semiexp/cspuz_core.git cspuz_core
     - name: Build
       run: |
+        source ${{ runner.temp }}/emsdk/emsdk_env.sh
         cd logic-pad-solver/packages/logic-pad-solver-core
         npm run build-rust
         npm pack
