@@ -1,4 +1,4 @@
-name: Build logic-pad-solver-core
+name: Publish logic-pad-solver-core
 
 on: workflow_dispatch
 
