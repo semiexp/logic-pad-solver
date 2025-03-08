@@ -9,6 +9,7 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: '22.x'
+        registry-url: 'https://registry.npmjs.org'
     - name: Setup build environment
       run: |
         rustup target add wasm32-unknown-emscripten
@@ -33,3 +34,7 @@ jobs:
       with:
         name: logic-pad-solver
         path: logic-pad-solver/packages/logic-pad-solver-core/logic-pad-solver-core-*.tgz
+    - name: Publish package to npm
+      run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
