@@ -1,5 +1,5 @@
-import { solveLogicPad } from "logic-pad-solver-core";
+import { solveLogicPad, PuzzleData, SolverResult } from "logic-pad-solver-core";
 
-export function solve(data: string, underclued: boolean): string {
+export function solve(data: PuzzleData, underclued: boolean): SolverResult {
   return solveLogicPad(data, underclued);
 }

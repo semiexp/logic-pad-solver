@@ -4,6 +4,8 @@ import { TileData } from '@logic-pad/core';
 import { urlToPuzzle, puzzleToJson } from './jsonify';
 import { AnswerBoard } from './board';
 
+import { SolverResult } from "logic-pad-solver-core";
+
 type AnswerData = {
   board: readonly (readonly TileData[])[];
   answer: ("light" | "dark" | null)[][];
@@ -51,7 +53,7 @@ function App() {
 
     const useUnderclued = solverMode === "underclued" || solverMode === "tilesRemaining";
     setIsRunning(true);
-    const result = JSON.parse(await workerInstance!.solve(json, useUnderclued));
+    const result: SolverResult = await workerInstance!.solve(json, useUnderclued);
     setIsRunning(false);
 
     if (result === null) {

@@ -1,1 +1,1 @@
-export declare function solveLogicPad(data: string, underclued: boolean): string;
+export * from "./src/solverBridge";

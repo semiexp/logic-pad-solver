@@ -1,5 +1,29 @@
-import { Serializer, Compressor, ConnectAllRule, BanPatternRule, UndercluedRule, SameShapeRule, UniqueShapeRule, RegionAreaRule, CellCountRule, OffByXRule, LotusSymbol, GalaxySymbol, SymbolsPerRegionRule, Comparison, TileData, Color } from '@logic-pad/core';
+import {
+  Serializer,
+  Compressor,
+  ConnectAllRule,
+  BanPatternRule,
+  UndercluedRule,
+  SameShapeRule,
+  UniqueShapeRule,
+  RegionAreaRule,
+  CellCountRule,
+  OffByXRule,
+  LotusSymbol,
+  GalaxySymbol,
+  SymbolsPerRegionRule,
+  Comparison,
+  TileData,
+  Color,
+  MinesweeperSymbol,
+  AreaNumberSymbol,
+  LetterSymbol,
+  DartSymbol,
+  ViewpointSymbol,
+} from '@logic-pad/core';
 import { Puzzle } from '@logic-pad/core/data/puzzle.js';
+
+import { PuzzleData, Rule } from "logic-pad-solver-core";
 
 export async function urlToPuzzle(url: string): Promise<Puzzle> {
   const value = decodeURIComponent(url).split("?d=")[1];
@@ -23,9 +47,8 @@ function canonizeTiles(tileData: readonly (readonly TileData[])[]): TileData[][]
   return ret;
 }
 
-export function puzzleToJson(puzzle: Puzzle): string {
-  const tiles = puzzle.grid.tiles;
-  const rules = [];
+export function puzzleToJson(puzzle: Puzzle): PuzzleData {
+  const rules: Rule[] = [];
 
   for (const rule of puzzle.grid.rules) {
     if (rule instanceof ConnectAllRule) {
@@ -68,7 +91,7 @@ export function puzzleToJson(puzzle: Puzzle): string {
     } else if (rule instanceof UndercluedRule) {
       continue;
     } else if (rule instanceof SymbolsPerRegionRule) {
-      let kind;
+      let kind: "exactly" | "atLeast" | "atMost";
       if (rule.comparison == Comparison.Equal) {
         kind = "exactly";
       } else if (rule.comparison == Comparison.AtLeast) {
@@ -93,27 +116,27 @@ export function puzzleToJson(puzzle: Puzzle): string {
     if (rule === "minesweeper") {
       rules.push({
         type: "minesweeper",
-        tiles: symbols,
+        tiles: symbols as readonly MinesweeperSymbol[],
       });
     } else if (rule === "number") {
       rules.push({
         type: "number",
-        tiles: symbols,
+        tiles: symbols as readonly AreaNumberSymbol[],
       });
     } else if (rule === "letter") {
       rules.push({
         type: "letter",
-        tiles: symbols,
+        tiles: symbols as readonly LetterSymbol[],
       });
     } else if (rule === "dart") {
       rules.push({
         type: "dart",
-        tiles: symbols,
+        tiles: symbols as readonly DartSymbol[],
       });
     } else if (rule === "viewpoint") {
       rules.push({
         type: "viewpoint",
-        tiles: symbols,
+        tiles: symbols as readonly ViewpointSymbol[],
       });
     } else if (rule === "lotus") {
       const tiles = symbols.map((symbol) => {
@@ -147,11 +170,30 @@ export function puzzleToJson(puzzle: Puzzle): string {
     }
   }
 
-  return JSON.stringify({
+  const connections = puzzle.grid.connections.edges.map((edge) => {
+    return {
+      x1: edge.x1,
+      y1: edge.y1,
+      x2: edge.x2,
+      y2: edge.y2,
+    };
+  });
+
+  const tiles = puzzle.grid.tiles.map((row) => {
+    return row.map((tile) => {
+      return {
+        exists: tile.exists,
+        fixed: tile.fixed,
+        color: tile.color,
+      };
+    });
+  });
+
+  return {
     width: puzzle.grid.width,
     height: puzzle.grid.height,
-    connections: puzzle.grid.connections.edges,
+    connections,
     tiles,
     rules,
-  });
+  };
 }
