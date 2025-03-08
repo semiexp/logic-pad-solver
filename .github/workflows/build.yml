@@ -3,6 +3,7 @@ name: Build logic-pad-solver-core
 on:
   push:
     branches: ["main"]
+  pull_request: {}
 
 jobs:
   build:
