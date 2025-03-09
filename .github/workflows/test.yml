@@ -1,0 +1,37 @@
+name: Test logic-pad-solver-core
+
+on:
+  push:
+    branches: ["main"]
+  pull_request: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22.x'
+    - name: Setup build environment
+      run: |
+        rustup target add wasm32-unknown-emscripten
+        rustup update
+        cd ${{ runner.temp }}
+        git clone https://github.com/emscripten-core/emsdk.git
+        cd emsdk
+        ./emsdk install latest
+        ./emsdk activate latest
+    - uses: actions/checkout@v4
+      with:
+        path: logic-pad-solver
+    - name: Clone cspuz_core
+      run: git clone --recursive https://github.com/semiexp/cspuz_core.git cspuz_core
+    - name: Build
+      run: |
+        source ${{ runner.temp }}/emsdk/emsdk_env.sh
+        cd logic-pad-solver/packages/logic-pad-solver-core
+        npm run build-rust
+    - name: Test
+      run: |
+        cd logic-pad-solver/packages/logic-pad-solver-core
+        npm test
