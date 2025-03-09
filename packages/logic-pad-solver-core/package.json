@@ -4,16 +4,20 @@
   "description": "A solver for https://logic-pad.com/ based on cspuz",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "build-rust": "cd solver && cargo build --target wasm32-unknown-emscripten --release --no-default-features && cp target/wasm32-unknown-emscripten/release/deps/solver.js ../src/core/solver.js"
   },
   "author": "",
   "license": "AGPL-3.0-only",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/semiexp/logic-pad-solver.git"
   },
   "publishConfig": {
     "provenance": true
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }
