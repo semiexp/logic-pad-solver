@@ -1,12 +1,10 @@
-// TODO: convert this to TypeScript
-
 import { expect, test } from '@jest/globals';
-import { solveLogicPad } from "./solverBridge";
+import { PuzzleData, solveLogicPad, Tile } from "./solverBridge.js";
 
-function makeTilesData(data) {
-  const ret = []
+function makeTilesData(data: string[]): Tile[][] {
+  const ret: Tile[][] = []
   for (let y = 0; y < data.length; ++y) {
-    const row = [];
+    const row: Tile[] = [];
     for (let x = 0; x < data[y].length; ++x) {
       const c = data[y].charAt(x);
 
@@ -25,10 +23,10 @@ function makeTilesData(data) {
   return ret;
 }
 
-function makeExpectedData(data) {
-  const ret = []
+function makeExpectedData(data: string[]): ("dark" | "light" | null)[][] {
+  const ret: ("dark" | "light" | null)[][] = []
   for (let y = 0; y < data.length; ++y) {
-    const row = [];
+    const row: ("dark" | "light" | null)[] = [];
     for (let x = 0; x < data[y].length; ++x) {
       const c = data[y].charAt(x);
 
@@ -46,7 +44,7 @@ function makeExpectedData(data) {
 }
 
 test("connectAll", () => {
-  const puzzle = {
+  const puzzle: PuzzleData = {
     width: 5,
     height: 3,
     connections: [],
