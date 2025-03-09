@@ -1,1 +1,1 @@
-export * from "./src/solverBridge";
+export * from "./src/solverBridge.js";
