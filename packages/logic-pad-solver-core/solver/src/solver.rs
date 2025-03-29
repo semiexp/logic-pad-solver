@@ -913,7 +913,7 @@ pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<
                         if !(tile.y % 2 == 0 && tile.x % 2 == 0) {
                             return Err("lotus not on cell center is not supported for symbol count");
                         }
-                        symbol_cells.push((tile.y, tile.x));
+                        symbol_cells.push((tile.y / 2, tile.x / 2));
                     }
                 }
                 Rule::Galaxy { tiles } => {
@@ -921,7 +921,7 @@ pub fn solve(puzzle: &Puzzle, underclued: bool) -> Result<Option<Vec<Vec<Option<
                         if !(tile.y % 2 == 0 && tile.x % 2 == 0) {
                             return Err("galaxy not on cell center is not supported for symbol count");
                         }
-                        symbol_cells.push((tile.y, tile.x));
+                        symbol_cells.push((tile.y / 2, tile.x / 2));
                     }
                 }
                 Rule::SameShape { color: _ } => (),
