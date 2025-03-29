@@ -666,3 +666,39 @@ describe("symbolCount", () => {
     ]));
   });
 });
+
+describe("symbolCountWithGalaxy", () => {
+  test("exactly", () => {
+    const puzzle: PuzzleData = {
+      width: 5,
+      height: 4,
+      connections: [],
+      tiles: makeTilesData([
+        ".....",
+        ".....",
+        "...#.",
+        "...#.",
+      ]),
+      rules: [
+        {
+          type: "galaxy",
+          tiles: [
+            { x: 6, y: 4 },
+          ]
+        },
+        {
+          type: "symbolCount",
+          number: 1,
+          kind: "exactly",
+          color: "dark",
+        }
+      ],
+    };
+    expect(solveLogicPad(puzzle, true)).toEqual(makeExpectedData([
+      "OOOOO",
+      "OO.#.",
+      "OO.#.",
+      "OO.#.",
+    ]));
+  });
+});
